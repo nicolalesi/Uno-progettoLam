@@ -7,7 +7,7 @@ import { createAppContainer } from 'react-navigation';
 import Home from './screens/Home';
 import partecipaPartita from './screens/partecipaPartita';
 
-
+//dichiarazione navigazione tra schermate
 export const stackNavigator = createStackNavigator({
   Home: {
       screen: Home,

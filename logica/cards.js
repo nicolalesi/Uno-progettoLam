@@ -1,7 +1,6 @@
 import React, { Component, useState, useContext } from 'react';
 import { StyleSheet, Text, View, TextInput, Image, ImageBackground, TouchableOpacity, InteractionManager, Alert } from 'react-native';
 
-import {storeContext} from '../utilities/storeContext';
 import Blue_0 from '../resources/Blue_0.png';
 import Blue_1 from '../resources/Blue_1.png';
 import Blue_2 from '../resources/Blue_2.png';
@@ -56,10 +55,8 @@ import Yellow_9 from '../resources/Yellow_9.png';
 import Yellow_Draw from '../resources/Yellow_Draw.png';
 import Yellow_Reverse from '../resources/Yellow_Reverse.png';
 import Yellow_Skip from '../resources/Yellow_Skip.png';
-import deck from '../resources/Deck.png';
-import client from '../logica/client';
-import table from '../resources/Table_3.png';
 
+//array immagini carte
 export const carte=[Blue_0,Blue_1,Blue_2,Blue_3,Blue_4,Blue_5,Blue_6,Blue_7,Blue_8,Blue_9,Blue_Draw,Blue_Reverse,Blue_Skip,
     Green_0,Green_1,Green_2,Green_3,Green_4,Green_5,Green_6,Green_7,Green_8,Green_9,Green_Draw,Green_Reverse,Green_Skip,
     Red_0,Red_1,Red_2,Red_3,Red_4,Red_5,Red_6,Red_7,Red_8,Red_9,Red_Draw,Red_Reverse,Red_Skip,
@@ -67,6 +64,7 @@ export const carte=[Blue_0,Blue_1,Blue_2,Blue_3,Blue_4,Blue_5,Blue_6,Blue_7,Blue
     Yellow_0,Yellow_1,Yellow_2,Yellow_3,Yellow_4,Yellow_5,Yellow_6,Yellow_7,Yellow_8,Yellow_9,Yellow_Draw,Yellow_Reverse,Yellow_Skip
 ];
 
+//array nomi carte
 export const cardName=['Blue_0','Blue_1','Blue_2','Blue_3','Blue_4','Blue_5','Blue_6','Blue_7','Blue_8','Blue_9','Blue_Draw','Blue_Reverse','Blue_Skip',
     'Green_0','Green_1','Green_2','Green_3','Green_4','Green_5','Green_6','Green_7','Green_8','Green_9','Green_Draw','Green_Reverse','Green_Skip',
     'Red_0','Red_1','Red_2','Red_3','Red_4','Red_5','Red_6','Red_7','Red_8','Red_9','Red_Draw','Red_Reverse','Red_Skip',
@@ -83,14 +81,14 @@ export default class cards extends React.Component{
         super(props);
     }
 
-
+//estrazione numeri randomici array carte
   random(){
     
             var randomNumber = Math.floor(Math.random() * carte.length);
     
             return randomNumber;
   }
-    
+//estrazione carte iniziali    
   initialCards(){
     
             var firstHand=[];
@@ -106,6 +104,7 @@ export default class cards extends React.Component{
             return firstHand;
   }
 
+//aggiunge carte nella mano dell'utente (usato solo per pesca e non per addCards che è gestito lato server)
     addedCards(hand,number){
 
       var handWithNewCards=[];
@@ -127,7 +126,7 @@ export default class cards extends React.Component{
       return handWithNewCards;
     }
 
-
+//controlla se posso effettivamente usare la carta scelta in base a quella centrale e conseguenti meccaniche in base alla carta giocata
    cartaGiocata(centralCard,usedCard,actualColor){
         var nomeCartaCentrale=centralCard.split("_");
         var coloreCartaCentrale=nomeCartaCentrale[0];
@@ -175,13 +174,12 @@ export default class cards extends React.Component{
         return false;
     }
 
+  //controlla se puoi giocare una carta extra (esempio se hai due numeri uguali in mano avrai diritto ad un turno bonus in cui puoi giocare solamente una carta dello stesso numero)
     cartaExtraGiocata(centralCard,usedCard){
       var nomeCartaCentrale=centralCard.split("_");
-      //var coloreCartaCentrale=nomeCartaCentrale[0];
       var numeroCartaCentrale=nomeCartaCentrale[1];
 
       var nomeCartaUsata=usedCard.split("_");
-      //var coloreCartaUsata=nomeCartaUsata[0];
       var numeroCartaUsata=nomeCartaUsata[1];
 
       if(numeroCartaUsata==numeroCartaCentrale){
@@ -193,16 +191,14 @@ export default class cards extends React.Component{
       return false;
   }
 
+  //controlla se hai diritto ad un turno extra
   turnoExtra(hand,cartaUtilizzata){
 
       for(var i=0;i<hand.length;i++){
         var nomeCarta=cardName[hand[i]].split("_");
-        //console.log("Carta giocata "+ cardName[cartaUtilizzata]);
-        var coloreCarta=nomeCarta[0];
         var numeroCarta=nomeCarta[1];
 
         var nomeCartaUtilizzata=cardName[cartaUtilizzata].split("_");
-        var coloreCartaUtilizzata=nomeCartaUtilizzata[0];
         var numeroCartaUtilizzata=nomeCartaUtilizzata[1];
         
         console.log(i+" Carta in mano "+numeroCarta)
@@ -213,6 +209,7 @@ export default class cards extends React.Component{
       return false;
   }
 
+  //controlla se puoi passare il turno o se hai carte da giocare
     canYouPass(hand,cartaCentrale){
       for(var i=0;i<hand.length;i++){
         var nomeCarta=cardName[hand[i]].split("_");

@@ -18,6 +18,7 @@ const showAlert = () =>
     }
   );
 
+  //stile schermata iniziale
 export class Home extends Component {
   render() {
     return (

@@ -22,13 +22,10 @@ app.get('/', (req, res) => {
     res.sendFile( __dirname + '/index.html');
   });
 
-//devo creare una nuova stanza ogni due giocatori 
-//tengo conto degli utenti connessi, se sono 3,5,7 dispari, creo una nuova stanza
-//mando il nome della stanza agli utenti che ad ogni comunicazione devono specificare la stanza in cui si trovano
-//ogni stanza ha infoUtente 
+
 io.on("connection", (socket) => {
 
-
+//Inviamo al giocatore il nome utente completo che userà nella sessione di gioco
   socket.on("NomeUtente",msg=>{
     
     var username;
@@ -40,11 +37,11 @@ io.on("connection", (socket) => {
       utentiConnessi.push(username);
       console.log(utentiConnessi);
       sockets.push(socket);
-      //console.log(sockets);
       socket.join("Partita");
     }
     socket.emit("User",username);
 
+    //se sono connessi due utenti inizia la partita
     if(utentiConnessi.length==2){
       var randomNumber = Math.floor(Math.random() * 53);
       if(randomNumber==40 || randomNumber ==39)
@@ -55,6 +52,7 @@ io.on("connection", (socket) => {
 
   });
 
+  //Se dopo la fine della partita entrambi intendono rigiocare riparte la partita
   socket.on("Rigioca",({nomeUtente})=>{
     console.log(" Rigioca da "+nomeUtente);
     
@@ -65,7 +63,7 @@ io.on("connection", (socket) => {
       if(randomNumber==40 || randomNumber == 39)
         randomNumber=Math.floor(Math.random() * 53);
       io.emit("restart","Riparte il gioco");
-      io.emit("firstCencdtralCard",randomNumber);
+      io.emit("firstCentralCard",randomNumber);
       rigioca=0;
     }
     else
@@ -73,13 +71,14 @@ io.on("connection", (socket) => {
   });
 
 
+  //segnale di cambio colore da inviare ai clients
   socket.on("changeColor",color=>{
     console.log("Cambio colore in "+color);
     io.emit("changeColor",color);
   });
     
 
-
+  //aggiunge le carte dopo la ricezione di un segnale "addCards" e le invia ai clients che aggiorneranno la mano
   socket.on("addCards",({user,number})=>{
 
     console.log("Aggiungi carte da "+user+" "+number);
@@ -95,19 +94,19 @@ io.on("connection", (socket) => {
         }
     }
 
-
-      //console.log("Mano completa con carte aggiunte "+manoCompleta);
       io.emit("addCards",({username: user,numeroCarte: number,carteInMano: infoUtente[indice].carteInMano}));
       io.emit("carteAvversario",{user : utentiConnessi[indice], numeroCarte : infoUtente[indice].carteInMano.length});
     }); 
 
  
+    //aggiornamento carta centrale del tavolo
     socket.on("cartaCentrale",({forClients,forServer})=>{
       io.emit("cartaCentrale",forClients);
       console.log(forClients);
       console.log("Nome carta "+forServer);
     });
 
+  //segnale di cambio turno    
     socket.on("cambioTurno",nomeUtente=>{
       for(var i=0;i<utentiConnessi.length;i++){
         if(utentiConnessi[i]!=nomeUtente){
@@ -116,6 +115,7 @@ io.on("connection", (socket) => {
       }
     });
 
+    //i clients inviano le carte che hanno in mano così da permettere al server di tenerne conto
     socket.on("myCards",({user,hand,carteInMano})=>{
 
       console.log("Possessore carte "+user);
@@ -134,9 +134,9 @@ io.on("connection", (socket) => {
 
     });
 
+    //disconnessione che avviene quando si esce dalla schermata
     socket.on("disconnection",msg=>{
       console.log(msg);
-      //io.disconnectSockets();
       
       const index = sockets.indexOf(socket);
       socket.disconnect(true);

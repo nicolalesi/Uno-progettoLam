@@ -1,7 +1,6 @@
 // partecipaPartita
 
 import React, { Component,useContext,useState,useEffect} from 'react';
-import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, TextInput, Image, Button, BackHandler, Alert, ImageBackground, Pressable,TouchableOpacity,Modal, ScrollView } from 'react-native';
 window.navigator.userAgent='react-native';
 import client from '../logica/client';
@@ -11,82 +10,20 @@ import {carte} from '../logica/cards';
 import { cardName } from '../logica/cards';
 import table from '../resources/Table_3.png';
 import deck from '../resources/Deck.png';
-import { wildColor } from '../logica/cards';
-import { createStackNavigator } from 'react-navigation-stack';
-import { createAppContainer } from 'react-navigation';
 import { Audio } from 'expo-av';
 
-
-const showAlert = () =>
-  Alert.alert(
-    "Non puoi giocare questa carta",
-    "Scegli un'altra carta da giocare",
-    [
-      {
-        text: "Riprova",
-        style: "cancel",
-      },
-    ],
-    {
-      cancelable: true,
-      onDismiss: () =>
-        Alert.alert(
-          "This alert was dismissed by tapping outside of the alert dialog."
-        ),
-    }
-  );
-
-
-const alertCard = () =>
-  Alert.alert(
-    "Controlla bene!",
-    "Hai carte da giocare",
-    [
-      {
-        text: "Riprova",
-        style: "cancel",
-      },
-    ],
-    {
-      cancelable: true,
-      onDismiss: () =>
-        Alert.alert(
-          "This alert was dismissed by tapping outside of the alert dialog."
-        ),
-    }
-);
-
-  
-const alertButtons = () =>
-Alert.alert(
-  "Non puoi cliccare questo pulsante",
-  "Se vuoi passare prima devi pescare se hai pescato non puoi pescare un'altra volta",
-  [
-    {
-      text: "Riprova",
-      style: "cancel",
-    },
-  ],
-  {
-    cancelable: true,
-    onDismiss: () =>
-      Alert.alert(
-        "This alert was dismissed by tapping outside of the alert dialog."
-      ),
-  }
-);
-
+//istanziamo cards che ci servirà per gestire le logiche di gioco
 var instanceCards=new cards();
 var clientConnection;
 
 export default function partecipaPartita ({navigation}){
 
+  //dichiarazione di tutti gli stati necessari per il gioco in particolare nel render
     const [nomeUtente, setNomeUtente] = useState();
     const [usernameInserito,setUsernameInserito]=useState(false);
     const [cartaCentrale,setCartaCentrale]=useState();
     const [hand,setHand]=useState(instanceCards.initialCards());
     const [enemyCardNumber,setEnemyCardNumber]=useState(5);
-    //const [userCarteRicevute,setUserCarteRicevute]=useState();
     const [statoDiGioco,setStatoDiGioco]=useState(false);
     const [turno,setTurno]=useState();
     const [endGame,setEndGame]=useState(false);
@@ -98,12 +35,14 @@ export default function partecipaPartita ({navigation}){
     const [turnoExtra,setTurnoExtra]=useState(false);
     const [sound, setSound] = useState();
 
+  //variabili necessarie per la gestione logica al di fuori del render  
     var handForLogics=hand;
     var coloreAttuale;
     var myUser;
     var punteggio=0;
     var enemyPunteggio=0;
-
+  
+  //funzione che carica in maniera asincrona la musica  
     async function playSound() {
       console.log('Loading Sound');
       const { sound } = await Audio.Sound.createAsync( require('../resources/esploratoriCielo.mp3')
@@ -114,6 +53,7 @@ export default function partecipaPartita ({navigation}){
       await sound.playAsync();
     }
 
+  //smonta il suono quando esci dalla schermata  
     React.useEffect(() => {
       return sound
         ? () => {
@@ -123,6 +63,7 @@ export default function partecipaPartita ({navigation}){
         : undefined;
     }, [sound]);
 
+  //alert che avvisa di un cambio colore avvenuto  
     const colorAlert = () =>
     Alert.alert(
       "Cambio colore in",
@@ -142,6 +83,7 @@ export default function partecipaPartita ({navigation}){
       }
     );
 
+  //alert che avvisa della fine della partita e informa sul vincitore e sul punteggio conseguito nella sessione di gioco  
     const winnerLoser = (winner) =>
     Alert.alert(
       "Partita finita",
@@ -157,19 +99,80 @@ export default function partecipaPartita ({navigation}){
         }
       ],
   );
-  
 
-    //forse +2 e +4 vanno male perché vanno con dati vecchi
+  //alert che avvisa che non puoi giocare una determinata carta
+  const showAlert = () =>
+  Alert.alert(
+    "Non puoi giocare questa carta",
+    "Scegli un'altra carta da giocare",
+    [
+      {
+        text: "Riprova",
+        style: "cancel",
+      },
+    ],
+    {
+      cancelable: true,
+      onDismiss: () =>
+        Alert.alert(
+          "This alert was dismissed by tapping outside of the alert dialog."
+        ),
+    }
+  );
+
+//alert che avvisa che avresti delle carte da giocare
+const alertCard = () =>
+  Alert.alert(
+    "Controlla bene!",
+    "Hai carte da giocare",
+    [
+      {
+        text: "Riprova",
+        style: "cancel",
+      },
+    ],
+    {
+      cancelable: true,
+      onDismiss: () =>
+        Alert.alert(
+          "This alert was dismissed by tapping outside of the alert dialog."
+        ),
+    }
+);
+
+//alert che avvisa che non puoi compiere in questo momento una determinata azione che può essere pescare o passare  
+const alertButtons = () =>
+Alert.alert(
+  "Non puoi cliccare questo pulsante",
+  "Se vuoi passare prima devi pescare se hai pescato non puoi pescare un'altra volta",
+  [
+    {
+      text: "Riprova",
+      style: "cancel",
+    },
+  ],
+  {
+    cancelable: true,
+    onDismiss: () =>
+      Alert.alert(
+        "This alert was dismissed by tapping outside of the alert dialog."
+      ),
+  }
+);
+  
+//manda un segnale al server che il giocatore x intende rigiocare
     function restartGame(){
       clientConnection.socket.emit("Rigioca",{nomeUtente:myUser});
     }
 
+  //invia al server il colore scelto e nasconde di nuovo la modale  
     function changeColor(color){
       clientConnection.socket.emit("changeColor",color);
       setModalVisible(false);
       clientConnection.socket.emit("cambioTurno",nomeUtente);
     }  
 
+  //Schermata iniziale di scelta nome utente  
     function insertUser(){
 
       return (
@@ -184,34 +187,28 @@ export default function partecipaPartita ({navigation}){
     
     }
 
-
+    //quando inviamo al server il nome utente inizia la connessione e vengono gestite tutte le meccaniche
     function sendNomeUtente(){
 
       clientConnection=new client();
 
+      //ricezione nome utente con identificativo per evitare duplicati
       clientConnection.socket.on("User",utente=>{
         console.log(utente); 
         myUser=utente; 
         setNomeUtente(utente);
       });
 
-      /*clientConnection.socket.on("StatoGiocoForClients",({
-        cartaCentrale, numeroCarteRimaste, carteDaAggiungere, utente
-      })=>{
-        console.log("Carta centrale " + cartaCentrale, "Numero carte rimaste "+numeroCarteRimaste+" Carte da aggiungere "+ carteDaAggiungere+ "Utente "+utente );
-
-        setCartaCentrale(cartaCentrale);
-      });*/
-
+      //ricezione numero carte in mano dell'avversario
       clientConnection.socket.on("carteAvversario",({user,numeroCarte})=>{
 
         if(user != myUser){
           setEnemyCardNumber(numeroCarte);
-          //setUserCarteRicevute(user);
         }
 
       });
 
+      //segnale di draw cards, vengono aggiunte carte in mano
       clientConnection.socket.on("addCards",({username,numeroCarte,carteInMano})=>{
         console.log("Aggiungi carte "+ numeroCarte);
 
@@ -223,15 +220,17 @@ export default function partecipaPartita ({navigation}){
         }
       });
 
+      //viene fatta ricominciare la partita
       clientConnection.socket.on("restart",msg=>{
         console.log("Rigioca "+msg);
         setEndGame(false);
         setHand(instanceCards.initialCards());
         setEnemyCardNumber(5);
-        //setUserCarteRicevute("All");
+        setModalVisible(false);
       });
 
 
+      //Alla connessione di due giocatori inizia la partita
       clientConnection.socket.on("Start game",msg=>{
         ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE_RIGHT);
         console.log(msg);
@@ -239,21 +238,23 @@ export default function partecipaPartita ({navigation}){
         setTurno(msg);
       });
 
+      //segnale di cambio turno
       clientConnection.socket.on("cambioTurno",nomeUtente=>{
         setTurno(nomeUtente);
       });
 
+      //aggiornamento carta centrale nel render
       clientConnection.socket.on("cartaCentrale",carta=>{
         setCartaCentrale(carta);
       });
 
+      //prima carta centrale generata randomicamente dal server
       clientConnection.socket.on("firstCentralCard",carta=>{
-        //console.log("Carta centrale "+carta);
-        //console.log("Carta centrale nome "+cardName[carta]);
         setCartaCentrale(carta);
         socket.emit("firstRandomCard",cardName[carta]);
       });
 
+      //segnale di gioco finito
       clientConnection.socket.on("endGame",user=>{
         setEndGame(true);
         if(myUser==user){
@@ -268,14 +269,15 @@ export default function partecipaPartita ({navigation}){
       });
 
 
+      //segnale di cambio colore
       clientConnection.socket.on("changeColor",color=>{
         console.log("Cambio colore in "+color);
         setActualColor(color);
         coloreAttuale=color;
         colorAlert();
-        //da capire se posso giocare sempre carte di questo colore
       });
 
+      //invio nome utente e proprie carte 
       clientConnection.socket.emit("NomeUtente",nomeUtente);
       clientConnection.socket.emit("myCards", 
       {user: myUser,
@@ -283,17 +285,17 @@ export default function partecipaPartita ({navigation}){
        carteInMano:handForLogics
      })
       setUsernameInserito(true);
-      
-
     }
     
 
     useEffect(() => {
 
+      //all'apertura della schermata viene subito caricato il suono
       playSound();
       
         return () => {
 
+          //all'uscita dalla schermata torna in verticale lo schermo
           ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT);
 
           clientConnection.socket.emit("disconnection",nomeUtente);
@@ -301,6 +303,7 @@ export default function partecipaPartita ({navigation}){
         }
     }, [])
 
+  //funzione che gestisce la pesca di una carta   
   pesca = () => {
     if(!pulsantePassa && nomeUtente==turno){
       console.log("Pesca");
@@ -323,6 +326,7 @@ export default function partecipaPartita ({navigation}){
 
     }
 
+  //funzione che gestisce la meccanica passo  
   passo = () => {
       handForLogics=hand;
       console.log("Carte in mano "+handForLogics.length);
@@ -342,25 +346,27 @@ export default function partecipaPartita ({navigation}){
       
     }
 
-//manca controllo username
+  //quando viene scelta una carta da giocare devono essere gestite le conseguenti meccaniche  
   onCardPress = (numberOfCard) =>{
 
+  //verifica la possibilità di giocare la carta in base a quella centrale  
   var canPlayCard=instanceCards.cartaGiocata(cardName[cartaCentrale],cardName[hand[numberOfCard]],actualColor);
-  var centralCard;
-  var carteDaAggiungere=0;
-  var cambioTurno;
+  //segnala la necessità di un cambio colore
   var cambioColore=false;
+  //tiene traccia della carta appena giocata
   var cartaGiocata;
-  var arrayCarteDaAggiungere=[];
+
   console.log(" Sono "+nomeUtente);
   console.log("Turno extra "+turnoExtra);
 
+  //gestisce il turno extra dovuto a due carte di numero uguale
   if(turnoExtra){
     console.log("Hai un turno extra");
     canPlayCard=instanceCards.cartaExtraGiocata(cardName[cartaCentrale],cardName[hand[numberOfCard]]);
     setTurnoExtra(false);
   }
 
+  //puoi giocare la carta
   if(canPlayCard!=false){
 
    centralCard=hand[numberOfCard];
@@ -369,9 +375,11 @@ export default function partecipaPartita ({navigation}){
    cartaGiocata=hand[numberOfCard];
    reorderHand(hand[numberOfCard]);
 
+   //=2 corrisponde al +2
   if(canPlayCard==2){
     clientConnection.socket.emit("addCards",{user:nomeUtente,number: 2});  
   }
+  //=4 corrisponde al +4 che scatena la scelta del colore
   if(canPlayCard==4){
 
     setModalVisible(true);
@@ -379,11 +387,13 @@ export default function partecipaPartita ({navigation}){
     cambioColore=true;
   }
 
+  //wild corrisponde al cambio colore che scatena la scelta del colore
   if(canPlayCard=='Wild'){
     setModalVisible(true);
     cambioColore=true;
   }
 
+  //reverse corrisponde al cambio giro e lo stop che concedono un turno extra 
   if(canPlayCard=='reverse' || instanceCards.turnoExtra(hand,cartaGiocata) ){
 
     cambioTurno=false;
@@ -396,19 +406,20 @@ export default function partecipaPartita ({navigation}){
   }
   else { 
     cambioTurno=true;
+    //se è attivo il cambio Colore prima di cambiare turno va scelto il colore
     if(!cambioColore)
       clientConnection.socket.emit("cambioTurno",nomeUtente);  
 
   }
-   // console.log("Carta giocata"+canPlayCard);
 
-   //console.log("Io sono "+nomeUtente);
+  //invio al server la mia mano aggiornata
    clientConnection.socket.emit("myCards", 
    {user: nomeUtente,
     hand: hand.length,
     carteInMano:hand
   })
 
+  //vengono reimpostati i bottoni
     setPulsantePesca(true);
     setPulsantePassa(false);
   
@@ -416,19 +427,15 @@ export default function partecipaPartita ({navigation}){
     handForLogics=hand;
     console.log("Carte in mano "+handForLogics.length);
 
-    /*clientConnection.socket.emit("StatoGioco",({
-      cartaCentrale: centralCard,
-      numeroCarteRimaste: hand.length,
-      carteDaAggiungere : carteDaAggiungere,
-      username: nomeUtente
-    }))*/
   }
   else{
+    //alert mostrato nel caso in cui non si possa giocare la carta scelta
    showAlert();
   }
 
 }
 
+//toglie dalla mano la carta appena giocata
   function reorderHand  (carta) {
 
     const index = hand.indexOf(carta);
@@ -436,13 +443,9 @@ export default function partecipaPartita ({navigation}){
       
   }
 
-  function updateHand(){
-    console.log("Aggiorna mano");
-      setHand(instanceCards.addedCards(hand,addCardsReceived));
-  }
 
 
-
+  //ciò che viene mostrato a schermo durante la partita
             return (
               <>
               {! endGame ? 
@@ -493,7 +496,7 @@ export default function partecipaPartita ({navigation}){
                       </View>  
                     </View>
                   </Modal>
-                    <Text style={styles.yourName} onLayout={()=>updateHand()}>{nomeUtente}</Text>
+                    <Text style={styles.yourName} >{nomeUtente}</Text>
                   {hand.map((item,index)=>{
                       return(
                       <TouchableOpacity style={styles.myTouchableCard} key={index} onPress={() => onCardPress(index)}>
@@ -530,7 +533,6 @@ export default function partecipaPartita ({navigation}){
             </>     
               )
             }
-    //      }
 
     const styles = StyleSheet.create({
       container: {
@@ -626,12 +628,10 @@ export default function partecipaPartita ({navigation}){
       scrittaTurno: {
         color: 'yellow',
         marginLeft: 20,
-        fontFamily: 'sans-serif-condensed'
       },
       yourName: {
         color: 'red',
         marginRight: 20,
-        fontFamily: 'sans-serif-condensed'
       },
       endTxt: {
         color: 'black',
